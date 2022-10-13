@@ -14,38 +14,14 @@ class Mutations::CreateUser < Mutations::BaseMutation
 
     def resolve(name:,auth_provider: nil, confirm_password:)
         email = auth_provider&.[](:credentials)&.[](:email)
+        password = auth_provider&.[](:credentials)&.[](:password)
         already_exists = User.find_by(email: email)
-
-        if already_exists[:email] == email
-            raise GraphQL::ExecutionError.new("Email address is already taken")
-        else
-            if confirm_password.eql? auth_provider&.[](:credentials)&.[](:password)
-                pass_exists = User.find_by(password: confirm_password)
-    
-                if pass_exists
-                    raise GraphQL::ExecutionError.new("Password already taken")
-                else
-                    user = User.new(
-                        name: name, 
-                        email: email,
-                        password: confirm_password
-                    )
-
-                    if (user.save)
-                        {
-                            user: user,
-                            errors: []
-                        }
-                    else
-                        {
-                            user: nil,
-                            errors: user.errors.full_message
-                        }
-                    end
-                end
-                
-            else raise GraphQL::ExecutionError.new("Passwords do not match")
-            end
-        end
+       
+        return raise GraphQL::ExecutionError.new("Email is already taken") if already_exists
+        return raise GraphQL::ExecutionError.new("Passwords do not match") unless confirm_password.eql? password
+        
+        user = User.new(name: name, email: email,password: confirm_password)
+        return {user: user, errors: []} if user.save
+        return {user: nil, errors: user.errors.full_message}
     end
 end
