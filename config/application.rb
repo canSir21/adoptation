@@ -34,5 +34,16 @@ module FunGraphql
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    config.api_only = false
+
+
+
+    config.middleware.insert_before 0, Rack::Cors do
+      allow do
+        origins '*'
+        resource '*', headers: :any, methods: :any
+      end
+    end
   end
 end
